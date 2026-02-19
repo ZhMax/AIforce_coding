@@ -1,0 +1,1013 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ImportBotVersionRequestV2 Schema (Improved)",
+  "description": "Comprehensive JSON Schema for creating a new bot version via import endpoint V2, aligned with bot_configurations.md",
+  "type": "object",
+  "required": ["data"],
+  "properties": {
+    "data": {
+      "type": "object",
+      "required": ["type", "attributes"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^bots$",
+          "description": "Resource type - must be 'bots' for import endpoint"
+        },
+        "attributes": {
+          "type": "object",
+          "required": [
+            "bot_name",
+            "request_ttl_in_seconds",
+            "no_match_stub_answer",
+            "scenarios"
+          ],
+          "properties": {
+            "name": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Name",
+              "description": "Наименование версии бота"
+            },
+            "changes_message": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Changes Message",
+              "description": "Внесенные изменения в данной версии бота"
+            },
+            "bot_name": {
+              "type": "string",
+              "title": "Bot Name",
+              "description": "Наименование бота"
+            },
+            "classifier_url": {
+              "anyOf": [{ "type": "string", "format": "uri" }, { "type": "null" }],
+              "title": "Classifier URL",
+              "description": "URL классификатора"
+            },
+            "model_id": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Model Id",
+              "description": "Идентификатор модели классификатора"
+            },
+            "request_ttl_in_seconds": {
+              "type": "integer",
+              "title": "Request TTL In Seconds",
+              "description": "Время жизни запроса в секундах"
+            },
+            "no_match_stub_answer": {
+              "type": "string",
+              "minLength": 1,
+              "title": "No Match Stub Answer",
+              "description": "Дефолтная реплика при отсутствии совпадений"
+            },
+            "need_preprocess": {
+              "type": "string",
+              "enum": ["disabled", "required", "optional"],
+              "default": "required",
+              "title": "Need Preprocess",
+              "description": "Флаг включения препроцессинга в сценарии бота"
+            },
+            "preprocessing": {
+              "anyOf": [
+                { "$ref": "#/definitions/Scenario" },
+                { "type": "null" }
+              ],
+              "title": "Preprocessing",
+              "description": "Специальный сценарий предварительной обработки"
+            },
+            "scenarios": {
+              "type": "array",
+              "minItems": 1,
+              "title": "Scenarios",
+              "description": "Массив сценариев",
+              "items": {
+                "$ref": "#/definitions/Scenario"
+              }
+            },
+            "named_rules": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "patternProperties": {
+                    "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+                      "type": "string",
+                      "description": "Шаблон правила для сопоставления"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                { "type": "null" }
+              ],
+              "title": "Named Rules",
+              "description": "Словарь именованных правил, где ключи - имена правил, а значения - строки с шаблонами"
+            },
+            "layout": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "patternProperties": {
+                    "^[0-9]+$": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/LayoutNode"
+                      }
+                    }
+                  }
+                },
+                { "type": "null" }
+              ],
+              "title": "Layout",
+              "description": "Объект настроек отображения бота. Координаты положения блоков на канвасе"
+            },
+            "is_published": {
+              "type": "boolean",
+              "default": false,
+              "title": "Is Published",
+              "description": "Признак того, что версия опубликована"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Scenario": {
+      "type": "object",
+      "title": "Scenario",
+      "description": "Сценарий - модуль с идентификатором, именем, точками входа и нодами",
+      "required": ["name", "entry_edges", "nodes"],
+      "properties": {
+        "id": {
+          "anyOf": [{ "type": "integer" }, { "type": "null" }],
+          "title": "Id",
+          "description": "Уникальный идентификатор сценария (генерируется бэкендом)"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Name",
+          "description": "Имя сценария"
+        },
+        "slug": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-z0-9_]+$" },
+            { "type": "null" }
+          ],
+          "title": "Slug",
+          "description": "Уникальный идентификатор для сценариев в боте (snake_case)"
+        },
+        "parent_scenario_id": {
+          "anyOf": [{ "type": "integer" }, { "type": "null" }],
+          "title": "Parent Scenario Id",
+          "description": "Идентификатор родительского сценария"
+        },
+        "entry_edges": {
+          "type": "array",
+          "title": "Entry Edges",
+          "description": "Входные ребра (точки входа)",
+          "items": {
+            "$ref": "#/definitions/EntryEdge"
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "title": "Nodes",
+          "description": "Ноды сценария",
+          "items": {
+            "$ref": "#/definitions/Node"
+          }
+        },
+        "is_locked": {
+          "type": "boolean",
+          "default": false,
+          "title": "Is Locked",
+          "description": "Статус блокировки"
+        },
+        "locked_by": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "title": "Locked By",
+          "description": "Пользователь, заблокировавший сценарий"
+        },
+        "locked_to": {
+          "anyOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ],
+          "title": "Locked To",
+          "description": "Время истечения блокировки"
+        }
+      }
+    },
+    "EntryEdge": {
+      "title": "EntryEdge",
+      "description": "Входная точка определяет способ активации сценария",
+      "oneOf": [
+        { "$ref": "#/definitions/MatchEdge" },
+        { "$ref": "#/definitions/IntentEdge" },
+        { "$ref": "#/definitions/EventEdge" },
+        { "$ref": "#/definitions/ManualEdge" },
+        { "$ref": "#/definitions/RuleEdge" }
+      ]
+    },
+    "MatchEdge": {
+      "type": "object",
+      "title": "MatchEdge",
+      "description": "Вход по регулярному выражению",
+      "required": ["type", "value"],
+      "properties": {
+        "id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор ребра"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Теги ребра"
+        },
+        "type": {
+          "type": "string",
+          "const": "match",
+          "description": "Тип входа"
+        },
+        "value": {
+          "type": "string",
+          "description": "Регулярное выражение для сопоставления"
+        },
+        "target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор целевого узла"
+        }
+      }
+    },
+    "IntentEdge": {
+      "type": "object",
+      "title": "IntentEdge",
+      "description": "Вход по интенту",
+      "required": ["type", "value"],
+      "properties": {
+        "id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор ребра"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Теги ребра"
+        },
+        "type": {
+          "type": "string",
+          "const": "intent",
+          "description": "Тип входа"
+        },
+        "value": {
+          "type": "string",
+          "description": "Имя/код интента"
+        },
+        "threshold": {
+          "anyOf": [
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "null" }
+          ],
+          "description": "Порог срабатывания интента (0..1)"
+        },
+        "target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор целевого узла"
+        }
+      }
+    },
+    "EventEdge": {
+      "type": "object",
+      "title": "EventEdge",
+      "description": "Вход по событию",
+      "required": ["type", "value"],
+      "properties": {
+        "id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор ребра"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Теги ребра"
+        },
+        "type": {
+          "type": "string",
+          "const": "event",
+          "description": "Тип входа"
+        },
+        "value": {
+          "type": "string",
+          "enum": ["init", "no_match"],
+          "description": "Тип события"
+        },
+        "target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор целевого узла"
+        }
+      }
+    },
+    "ManualEdge": {
+      "type": "object",
+      "title": "ManualEdge",
+      "description": "Ручной вход",
+      "required": ["type"],
+      "properties": {
+        "id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор ребра"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Теги ребра"
+        },
+        "type": {
+          "type": "string",
+          "const": "manual",
+          "description": "Тип входа"
+        },
+        "target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор целевого узла"
+        }
+      }
+    },
+    "RuleEdge": {
+      "type": "object",
+      "title": "RuleEdge",
+      "description": "Вход по правилу",
+      "required": ["type", "value"],
+      "properties": {
+        "id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор ребра"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Теги ребра"
+        },
+        "type": {
+          "type": "string",
+          "const": "rule",
+          "description": "Тип входа"
+        },
+        "value": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Массив правил для сопоставления"
+        },
+        "threshold": {
+          "anyOf": [
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "null" }
+          ],
+          "description": "Порог срабатывания рула (0..1)"
+        },
+        "target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Идентификатор целевого узла"
+        }
+      }
+    },
+    "Node": {
+      "type": "object",
+      "title": "Node",
+      "description": "Нода - отдельный шаг в рабочем процессе",
+      "required": ["id", "blocks"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Идентификатор ноды (уникален в сценарии)"
+        },
+        "name": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Название ноды"
+        },
+        "blocks": {
+          "type": "array",
+          "description": "Последовательность блоков, выполняемых в ноде",
+          "items": {
+            "$ref": "#/definitions/Block"
+          }
+        },
+        "next_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Безусловный переход к следующей ноде по умолчанию"
+        }
+      }
+    },
+    "Block": {
+      "title": "Block",
+      "description": "Блок - атомарный шаг логики сценария бота",
+      "oneOf": [
+        { "$ref": "#/definitions/VariablesBlock" },
+        { "$ref": "#/definitions/SingleIfBlock" },
+        { "$ref": "#/definitions/AnswerBlock" },
+        { "$ref": "#/definitions/ButtonsBlock" },
+        { "$ref": "#/definitions/DynamicButtonsBlock" },
+        { "$ref": "#/definitions/ExtendBlock" },
+        { "$ref": "#/definitions/MatchExtendBlock" },
+        { "$ref": "#/definitions/HttpRequestBlock" },
+        { "$ref": "#/definitions/WaitForUserBlock" },
+        { "$ref": "#/definitions/CloseBlock" },
+        { "$ref": "#/definitions/GoOperatorBlock" },
+        { "$ref": "#/definitions/ScriptBlock" },
+        { "$ref": "#/definitions/LlmBlock" },
+        { "$ref": "#/definitions/AgentBlock" }
+      ]
+    },
+    "VariablesBlock": {
+      "type": "object",
+      "title": "VariablesBlock",
+      "description": "Присвоение/Вычисление Переменных",
+      "required": ["type", "id", "name", "value", "variable_type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "variables"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "name": {
+          "type": "string",
+          "description": "Имя переменной"
+        },
+        "value": {
+          "description": "Значение переменной (зависит от variable_type)"
+        },
+        "variable_type": {
+          "type": "string",
+          "enum": ["regexp_map", "regexp", "python", "constant"],
+          "description": "Тип значения"
+        }
+      }
+    },
+    "SingleIfBlock": {
+      "type": "object",
+      "title": "SingleIfBlock",
+      "description": "Условный Переход",
+      "required": ["type", "id", "title", "expression", "code_type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "single_if"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "title": {
+          "type": "string",
+          "description": "Текстовое описание условия"
+        },
+        "expression": {
+          "type": "string",
+          "description": "Булево код-выражение"
+        },
+        "code_type": {
+          "type": "string",
+          "enum": ["python", "custom"],
+          "description": "Тип код выражения"
+        },
+        "target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при результате вычисления выражения = true"
+        }
+      }
+    },
+    "AnswerBlock": {
+      "type": "object",
+      "title": "AnswerBlock",
+      "description": "Формирование Ответа Ассистента",
+      "required": ["type", "id", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "answer"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "value": {
+          "type": "string",
+          "description": "Текстовый ответ клиенту. Допускает плейсхолдеры вида {{var}}"
+        },
+        "tts": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Опциональная SSML/TTS-версия"
+        }
+      }
+    },
+    "ButtonsBlock": {
+      "type": "object",
+      "title": "ButtonsBlock",
+      "description": "Отображение Набора Кнопок",
+      "required": ["type", "id", "buttons"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "buttons"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "buttons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/Button"
+          },
+          "description": "Список кнопок"
+        }
+      }
+    },
+    "Button": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Надпись на кнопке, допускает плейсхолдеры вида {{var}}"
+        },
+        "target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при выборе"
+        }
+      }
+    },
+    "DynamicButtonsBlock": {
+      "type": "object",
+      "title": "DynamicButtonsBlock",
+      "description": "Динамические Кнопки",
+      "required": ["type", "id", "source_variable_name", "result_variable_name"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "dynamic_buttons"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "display_text": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Текст, который показывается на поверхности для набора кнопок"
+        },
+        "source_variable_name": {
+          "type": "string",
+          "description": "Имя переменной, которая содержит python dict c текст_на_кнопке:значение"
+        },
+        "result_variable_name": {
+          "type": "string",
+          "description": "Имя переменной, в которую будет записано соответствующее значение после выбора кнопки"
+        },
+        "valid_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при выборе одной из кнопок"
+        },
+        "invalid_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при отсутствии выбора кнопки"
+        }
+      }
+    },
+    "ExtendBlock": {
+      "type": "object",
+      "title": "ExtendBlock",
+      "description": "Включение другого сценария",
+      "required": ["type", "id", "scenario_id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "extend"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "scenario_id": {
+          "type": "integer",
+          "description": "Идентификатор сценария, в который переходим (переход с возвратом)"
+        },
+        "return_back": {
+          "type": "boolean",
+          "default": true,
+          "description": "Флаг возврата"
+        }
+      }
+    },
+    "MatchExtendBlock": {
+      "type": "object",
+      "title": "MatchExtendBlock",
+      "description": "Включение одного из сценариев",
+      "required": ["type", "id", "scenario_ids"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "match_extend"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "scenario_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer" },
+          "description": "Упорядоченный список сценариев, в которых последовательно проверяются условия на EntryEdges"
+        }
+      }
+    },
+    "HttpRequestBlock": {
+      "type": "object",
+      "title": "HttpRequestBlock",
+      "description": "Вызов HTTP-Сервиса",
+      "required": ["type", "id", "url", "method"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "http_request"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Строковый URL HTTP сервиса, допускает плейсхолдеры вида {{var}}"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+          "description": "Тип метода"
+        },
+        "timeout": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+          "description": "Максимальное время ожидания ответа на клиенте в секундах"
+        },
+        "retry_attempts_count": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Максимальное количество попыток запросов при ошибке"
+        },
+        "ok_target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при успехе"
+        },
+        "error_target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при неуспехе"
+        },
+        "body": {
+          "type": "string",
+          "default": "",
+          "description": "Строковое тело запроса, допускает плейсхолдеры вида {{var}}"
+        },
+        "headers": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/KeyValuePair"
+          },
+          "description": "HTTP-заголовки"
+        },
+        "response_mapping": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/KeyValuePair"
+          },
+          "description": "Маппинг ответа: key - имя переменной, value - выражение адресации данных ответа"
+        }
+      }
+    },
+    "KeyValuePair": {
+      "type": "object",
+      "required": ["key", "value"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Ключ"
+        },
+        "value": {
+          "type": "string",
+          "description": "Значение (может содержать плейсхолдеры {{...}})"
+        }
+      }
+    },
+    "WaitForUserBlock": {
+      "type": "object",
+      "title": "WaitForUserBlock",
+      "description": "Ожидание пользовательского ввода",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "wait_for_user"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        }
+      }
+    },
+    "CloseBlock": {
+      "type": "object",
+      "title": "CloseBlock",
+      "description": "Завершить диалог",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "close"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        }
+      }
+    },
+    "GoOperatorBlock": {
+      "type": "object",
+      "title": "GoOperatorBlock",
+      "description": "Перевод на оператора",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "go_operator"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "additional_metadata": {
+          "type": "object",
+          "default": {},
+          "description": "Дополнительные атрибуты, которые передаются в response от движка"
+        }
+      }
+    },
+    "ScriptBlock": {
+      "type": "object",
+      "title": "ScriptBlock",
+      "description": "Выполнение Скрипта",
+      "required": ["type", "id", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "script"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "value": {
+          "type": "string",
+          "description": "Python скрипт, в котором выполняется определена функция def handler(<объект_работы_с_контекстом>)"
+        }
+      }
+    },
+    "LlmBlock": {
+      "type": "object",
+      "title": "LlmBlock",
+      "description": "Вызов LLM Модели",
+      "required": ["type", "id", "result_variable_name", "system_message", "user_message", "model"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "llm"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "result_variable_name": {
+          "type": "string",
+          "description": "Имя переменной с текстовым ответом от модели"
+        },
+        "system_message": {
+          "type": "string",
+          "description": "Системная часть промпта в модель, допускает плейсхолдеры {{}}"
+        },
+        "user_message": {
+          "type": "string",
+          "description": "Пользовательская часть промпта в модель, допускает плейсхолдеры {{}}"
+        },
+        "history_depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 0,
+          "description": "Количество последних итераций взаимодействия клиента и ассистента"
+        },
+        "ok_target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при успехе"
+        },
+        "error_target_node_id": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Целевая нода при неуспехе"
+        },
+        "model": {
+          "$ref": "#/definitions/ModelConfig",
+          "description": "Параметры вызова llm"
+        }
+      }
+    },
+    "AgentBlock": {
+      "type": "object",
+      "title": "AgentBlock",
+      "description": "AI-Агент",
+      "required": ["type", "id", "result_variable_name", "system_message", "user_message", "model", "tools"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "agent"
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор блока"
+        },
+        "tags": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Метки/теги"
+        },
+        "result_variable_name": {
+          "type": "string",
+          "description": "Имя переменной для хранения результата ответа агента"
+        },
+        "system_message": {
+          "type": "string",
+          "description": "Системная часть промпта для агента"
+        },
+        "user_message": {
+          "type": "string",
+          "description": "Пользовательская часть промпта для агента"
+        },
+        "history_depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 0,
+          "description": "Глубина истории сообщений, передаваемых агенту"
+        },
+        "model": {
+          "$ref": "#/definitions/ModelConfig",
+          "description": "Параметры модели агента"
+        },
+        "tools": {
+          "$ref": "#/definitions/ToolsConfig",
+          "description": "Инструменты для агента"
+        }
+      }
+    },
+    "ModelConfig": {
+      "type": "object",
+      "required": ["url", "model_name"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Ссылка на модель. Строковый URL HTTP сервиса, допускает плейсхолдеры вида {{var}}"
+        },
+        "token": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "description": "Токен доступа к модели"
+        },
+        "model_name": {
+          "type": "string",
+          "description": "Имя модели, к которой выполняется запрос. Поддерживаются OpenAI-совместимые API-модели"
+        },
+        "max_tokens": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+          "description": "Максимальное количество токенов, сгенерированное LLM в ответ на запрос"
+        },
+        "temperature": {
+          "anyOf": [{ "type": "number", "minimum": 0.0, "maximum": 2.0 }, { "type": "null" }],
+          "description": "Уровень случайности в ответах (0.0 - 2.0)"
+        },
+        "top_p": {
+          "anyOf": [{ "type": "number", "minimum": 0.0, "maximum": 1.0 }, { "type": "null" }],
+          "description": "Пороговая вероятность включения токенов (0.0 - 1.0)"
+        },
+        "top_k": {
+          "anyOf": [{ "type": "integer", "minimum": 1, "maximum": 1000 }, { "type": "null" }],
+          "description": "Количество наиболее вероятных токенов (1 - 1000)"
+        },
+        "frequency_penalty": {
+          "anyOf": [{ "type": "number", "minimum": 0.0, "maximum": 2.0 }, { "type": "null" }],
+          "description": "Штраф за повторение токенов в зависимости от частоты (0.0 - 2.0)"
+        },
+        "presence_penalty": {
+          "anyOf": [{ "type": "number", "minimum": 0.0, "maximum": 2.0 }, { "type": "null" }],
+          "description": "Фиксированный штраф за повторение токенов (0.0 - 2.0)"
+        },
+        "timeout": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+          "description": "Максимальное время ожидания ответа в секундах"
+        },
+        "retry_attempts_count": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Максимальное количество попыток запросов при ошибке"
+        }
+      }
+    },
+    "ToolsConfig": {
+      "type": "object",
+      "required": ["mcp_servers"],
+      "properties": {
+        "mcp_servers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["url"],
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL сервера MCP для инструментов агента"
+              }
+            }
+          },
+          "description": "Массив серверов MCP с URL для инструментов агента"
+        }
+      }
+    },
+    "LayoutNode": {
+      "type": "object",
+      "required": ["x", "y", "node_id"],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "description": "Координаты положения ноды по оси X в пикселях"
+        },
+        "y": {
+          "type": "integer",
+          "description": "Координаты положения ноды по оси Y в пикселях"
+        },
+        "node_id": {
+          "type": "string",
+          "description": "Идентификатор ноды в сценарии"
+        }
+      }
+    }
+  }
+}
