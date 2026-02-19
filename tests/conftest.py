@@ -249,6 +249,21 @@ def has_block_type(bot_config_extractor):
 # Dynamic Parametrization
 # =============================================================================
 
+def _make_test_id(pattern: str, index: int) -> str:
+    """Create readable test ID from regex pattern."""
+    import re
+    
+    # Extract meaningful words (including Russian characters)
+    words = re.findall(r'[\wа-яА-ЯёЁ]+', pattern)
+    
+    if words:
+        # Use first 2-3 words, max 50 chars
+        meaningful = '_'.join(words[:3])[:50]
+        return f"match_{index}_{meaningful}"
+    else:
+        return f"match_{index}_pattern"
+
+
 def pytest_generate_tests(metafunc):
     """
     Dynamically parametrize tests based on bot configuration.
@@ -270,7 +285,10 @@ def pytest_generate_tests(metafunc):
     if "match_edge" in metafunc.fixturenames:
         edges = extractor.extract_entry_edges_by_type("match")
         if edges:
-            metafunc.parametrize("match_edge", edges, ids=[e.pattern for e in edges])
+            ids = [_make_test_id(e.pattern, i) for i, e in enumerate(edges)]
+            metafunc.parametrize("match_edge", edges, ids=ids)
+
+            # metafunc.parametrize("match_edge", edges, ids=[e.pattern for e in edges])
         else:
             # No match edges - skip these tests
             metafunc.parametrize("match_edge", [pytest.param(None, marks=pytest.mark.skip("No match edges"))])

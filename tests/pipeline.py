@@ -337,21 +337,24 @@ def run_full_pipeline(
             return False
         bot_id, current_version_id = result
 
+    # Step 4: Run behavioral tests
     try:
-        # Step 4: Run behavioral tests
         if not skip_behavioral:
             if not run_pytest_behavioral(bot_id, current_version_id, config_path, project_root_path):
                 print("\n✗ Pipeline failed at Step 4: Behavioral Tests")
+                if not skip_import and bot_id is not None:
+                    print("⚠️ Tests failed - cleaning up...")
+                    remove_bot_from_platform(bot_id, current_version_id)
                 return False
-        # All steps passed
-        print_header("✓ Pipeline Completed Successfully!", "=")
-
-        return True
     except Exception:
         if not skip_import and bot_id is not None:
             print("⚠️ Tests failed - cleaning up...")
             remove_bot_from_platform(bot_id, current_version_id)
         return False
+
+    # All steps passed
+    print_header("✓ Pipeline Completed Successfully!", "=")
+    return True
 
 
 def main():
